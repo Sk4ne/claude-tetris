@@ -43,6 +43,8 @@ jobs:
                `gh issue comment ${{ github.event.issue.number }} --edit-last --create-if-none --body "..."`
                para mantener un único comentario que se actualiza en cada edición del issue.
 
+            El comentario debe estar escrito en formato Markdown compatible con GitHub (GFM): encabezados con `#`, listas con `-`, negritas con `**`, código en línea con comillas invertidas y bloques de código con triple comilla invertida. Para pasar el cuerpo a `gh issue comment`, usa saltos de línea reales (no secuencias literales `\n`) para que GitHub lo renderice correctamente.
+
             Formato del diagnóstico:
             ## 🔍 Diagnóstico automático
             - **Tipo / labels asignados**: cuáles y por qué.
