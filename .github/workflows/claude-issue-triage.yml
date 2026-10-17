@@ -1,0 +1,57 @@
+name: Claude Issue Triage
+
+on:
+  issues:
+    types: [opened, edited]
+
+concurrency:
+  group: issue-triage-${{ github.event.issue.number }}
+  cancel-in-progress: true
+
+jobs:
+  triage:
+    if: github.event.issue.pull_request == null
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      issues: write
+      id-token: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 1
+
+      - name: Triage issue with Claude
+        uses: anthropics/claude-code-action@v1
+        with:
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          prompt: |
+            Eres el asistente de triaje de issues del repositorio ${{ github.repository }}.
+            Issue a analizar: #${{ github.event.issue.number }} (evento: ${{ github.event.action }}).
+
+            Lee CLAUDE.md para entender la arquitectura del proyecto (index.html, style.css, game.js).
+
+            Pasos:
+            1. Lee el issue con `gh issue view ${{ github.event.issue.number }} --comments`.
+            2. Lista los labels existentes con `gh label list` y elige SOLO labels que ya existan. No crees labels nuevos.
+            3. Asigna los labels apropiados con `gh issue edit ${{ github.event.issue.number }} --add-label "..."`.
+               Si el evento es "edited", quita con `--remove-label` los labels que ya no apliquen.
+            4. Investiga el código con Read, Glob y Grep para ubicar la causa probable o las zonas afectadas.
+            5. Publica el diagnóstico en español con
+               `gh issue comment ${{ github.event.issue.number }} --edit-last --create-if-none --body "..."`
+               para mantener un único comentario que se actualiza en cada edición del issue.
+
+            Formato del diagnóstico:
+            ## 🔍 Diagnóstico automático
+            - **Tipo / labels asignados**: cuáles y por qué.
+            - **Resumen del problema**.
+            - **Causa probable**: con referencias `archivo:línea`.
+            - **Archivos y funciones afectados** (p. ej. `clearLines`, `tryRotate`, `updateHUD`).
+            - **Enfoque de solución propuesto**: pasos concretos, sin implementar código.
+            - **Riesgos / casos borde** y **preguntas abiertas** si falta información.
+
+            Restricciones: no modifiques archivos del repositorio, no abras PRs ni ramas. Solo asigna labels y publica/actualiza el comentario.
+          claude_args: |
+            --allowedTools "Read,Glob,Grep,Bash(gh issue view:*),Bash(gh label list:*),Bash(gh issue edit:*),Bash(gh issue comment:*)"
