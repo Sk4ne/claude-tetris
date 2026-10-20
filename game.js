@@ -290,10 +290,10 @@ function loadSkin() {
 function drawBlock(context, x, y, colorIndex, size, alpha) {
   if (!colorIndex) return;
   const skin = activeSkin();
+  context.save();
   context.globalAlpha = alpha ?? 1;
   skin.drawBlock(context, x * size, y * size, size, skin.colors[colorIndex]);
-  context.globalAlpha = 1;
-  context.shadowBlur = 0;
+  context.restore();
 }
 
 // Círculo en el centro de la tuerca (origen de la pieza en x, y; el hueco es la celda central)
@@ -455,8 +455,8 @@ themeToggle.addEventListener('click', () => {
 });
 
 skinSelect.addEventListener('change', () => {
-  try { localStorage.setItem(SKIN_KEY, skinSelect.value); } catch (e) { /* almacenamiento no disponible */ }
   applySkin(skinSelect.value);
+  try { localStorage.setItem(SKIN_KEY, skinName); } catch (e) { /* almacenamiento no disponible */ }
   skinSelect.blur(); // evita que las flechas/Espacio cambien el select durante el juego
 });
 
