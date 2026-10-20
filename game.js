@@ -322,7 +322,8 @@ function init() {
   started = true;
   combo = 0;
   maxCombo = 0;
-  pendingRecord = null;
+  commitPendingRecord(); // reiniciar sin pulsar Guardar conserva el récord
+  gameOverResetBtn.classList.add('hidden');
   newRecordEl.classList.add('hidden');
   nameForm.classList.add('hidden');
   overlayRecords.classList.add('hidden');
@@ -384,6 +385,7 @@ const overlayRecords = document.getElementById('overlay-records');
 const newRecordEl = document.getElementById('new-record');
 const nameForm = document.getElementById('name-form');
 const nameInput = document.getElementById('name-input');
+const gameOverResetBtn = document.querySelector('#overlay .reset-records-btn');
 let pendingRecord = null; // entrada del top aún sin nombre confirmado
 
 function loadRecords() {
@@ -392,7 +394,7 @@ function loadRecords() {
     const data = JSON.parse(localStorage.getItem(RECORDS_KEY));
     if (!data || !Array.isArray(data.top)) return empty;
     return {
-      top: data.top.filter(e => e && Number.isFinite(e.score)).slice(0, MAX_TOP),
+      top: data.top.filter(e => e && Number.isFinite(e.score)).sort((a, b) => b.score - a.score).slice(0, MAX_TOP),
       bestCombo: Number(data.bestCombo) || 0,
       maxLines: Number(data.maxLines) || 0,
     };
@@ -453,6 +455,7 @@ function showGameOverRecords() {
   rec.bestCombo = Math.max(rec.bestCombo, maxCombo);
   rec.maxLines = Math.max(rec.maxLines, lines);
   saveRecords(rec);
+  gameOverResetBtn.classList.remove('hidden');
   if (qualified) {
     pendingRecord = { score, lines, level };
     nameInput.value = loadName();
@@ -491,8 +494,7 @@ nameForm.addEventListener('submit', e => {
   if (document.activeElement) document.activeElement.blur();
 });
 
-// Reiniciar sin pulsar Guardar: se guarda con el nombre escrito
-restartBtn.addEventListener('click', () => { commitPendingRecord(); restartBtn.blur(); });
+restartBtn.addEventListener('click', () => restartBtn.blur());
 
 document.getElementById('start-btn').addEventListener('click', e => { e.target.blur(); init(); });
 
@@ -508,3 +510,4 @@ document.querySelectorAll('.reset-records-btn').forEach(btn => {
 
 applyTheme(loadTheme());
 renderRecords(startRecords, null);
+document.getElementById('start-btn').focus();
