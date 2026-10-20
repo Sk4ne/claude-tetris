@@ -22,3 +22,7 @@ Everything lives in three files: `index.html` (canvases `#board` 300x600 and `#n
 - Input is a single `keydown` handler (arrows, X rotate, Space hard drop, P pause). Soft/hard drop add score directly (1 / 2 per row); line-clear scoring uses `LINE_SCORES * level`.
 - The HUD is updated imperatively via `updateHUD()`; the keydown handler calls it after every key.
 - Records (localStorage `tetris-records`): `{ top: [{name, score, lines, level, date}] (max 5, desc), bestCombo, maxLines }`, always in try/catch (`loadRecords`/`saveRecords`). A start screen (`#start-overlay`) is shown on load; `init()` only runs when "Jugar" is clicked (`started` gates the keydown handler before that). `combo`/`maxCombo` are computed in `lockPiece()` (consecutive locks that clear lines) and reset in `init()`. `endGame()` calls `showGameOverRecords()`: it persists bestCombo/maxLines and, if the score qualifies, shows the name input (`pendingRecord`, committed by Enter/Guardar/Reiniciar). The keydown handler ignores events whose target is an `INPUT`.
+
+## Menú de pausa
+
+`P`/`Escape` llama a `togglePause()`, que abre `#pause-menu` (separado de `#overlay`, que solo se usa en game over). Con `paused` activo el handler de `keydown` bloquea las teclas del juego (`preventDefault`); `closePauseMenu()` hace blur de los controles y fija `inputBlockedUntil` (~150 ms de gracia). `startLevel` (localStorage `tetris-start-level`, 1–10) lo aplica `init()`; `clearLines` usa `Math.max(startLevel, ...)`.
