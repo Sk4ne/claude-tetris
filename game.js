@@ -222,22 +222,117 @@ function updateHUD() {
   levelEl.textContent = level;
 }
 
+// ---- Skins ----
+// Cada skin: { colors[0..8], bg (null = fondo del tema CSS), grid (null = themeColors.grid), drawBlock(context, px, py, size, colorIndex) }
+// drawBlock de un skin recibe píxeles (px, py), tamaño y color ya resueltos; la opacidad la gestiona drawBlock global.
+const SKINS = {
+  retro: {
+    colors: COLORS,
+    bg: null,
+    grid: null,
+    drawBlock(context, px, py, size, color) {
+      context.fillStyle = color;
+      context.fillRect(px + 1, py + 1, size - 2, size - 2);
+      context.fillStyle = themeColors.shine;
+      context.fillRect(px + 1, py + 1, size - 2, 4);
+    },
+  },
+  neon: {
+    colors: [null, '#00f0ff', '#ffee00', '#d500f9', '#39ff14', '#ff1744', '#2979ff', '#ff9100', '#e0e0e0'],
+    bg: '#000000',
+    grid: '#1a1a22',
+    drawBlock(context, px, py, size, color) {
+      context.shadowColor = color;
+      context.shadowBlur = 12;
+      context.strokeStyle = color;
+      context.lineWidth = 2;
+      context.strokeRect(px + 3, py + 3, size - 6, size - 6);
+      context.fillStyle = color;
+      context.globalAlpha *= 0.35;
+      context.fillRect(px + 3, py + 3, size - 6, size - 6);
+      context.shadowBlur = 0;
+      context.shadowColor = 'transparent';
+    },
+  },
+  pastel: {
+    colors: [null, '#a8e6ef', '#fff1b8', '#d9b8f0', '#c1e8c4', '#f5b8b8', '#b8d4f5', '#fcd5a5', '#cfd8dc'],
+    bg: null,
+    grid: null,
+    drawBlock(context, px, py, size, color) {
+      const r = size * 0.28;
+      const x = px + 1.5, y = py + 1.5, w = size - 3;
+      context.beginPath();
+      context.moveTo(x + r, y);
+      context.arcTo(x + w, y, x + w, y + w, r);
+      context.arcTo(x + w, y + w, x, y + w, r);
+      context.arcTo(x, y + w, x, y, r);
+      context.arcTo(x, y, x + w, y, r);
+      context.closePath();
+      context.fillStyle = color;
+      context.fill();
+      context.strokeStyle = 'rgba(255,255,255,0.7)';
+      context.lineWidth = 1.5;
+      context.stroke();
+    },
+  },
+  pixel: {
+    colors: [null, '#29adff', '#ffec27', '#7e2553', '#00e436', '#ff004d', '#1d2b53', '#ffa300', '#83769c'],
+    bg: null,
+    grid: null,
+    drawBlock(context, px, py, size, color) {
+      const u = size / 6; // rejilla de 6x6 "píxeles" por bloque
+      context.fillStyle = color;
+      context.fillRect(px, py, size, size);
+      // luz arriba/izquierda, sombra abajo/derecha
+      context.fillStyle = 'rgba(255,255,255,0.35)';
+      context.fillRect(px, py, size, u);
+      context.fillRect(px, py, u, size);
+      context.fillStyle = 'rgba(0,0,0,0.35)';
+      context.fillRect(px, py + size - u, size, u);
+      context.fillRect(px + size - u, py, u, size);
+      // patrón de tramado (ditherizado) interior
+      context.fillStyle = 'rgba(0,0,0,0.18)';
+      for (let i = 1; i < 5; i++)
+        for (let j = 1; j < 5; j++)
+          if ((i + j) % 2 === 0) context.fillRect(px + j * u, py + i * u, u, u);
+    },
+  },
+};
+
+const SKIN_KEY = 'tetris-skin';
+const skinSelect = document.getElementById('skin-select');
+let skinName = 'retro';
+
+function activeSkin() { return SKINS[skinName]; }
+
+function applySkin(name) {
+  skinName = SKINS[name] ? name : 'retro';
+  skinSelect.value = skinName;
+  if (current && next) { draw(); drawNext(); }
+}
+
+function loadSkin() {
+  try {
+    const v = localStorage.getItem(SKIN_KEY);
+    return SKINS[v] ? v : 'retro';
+  } catch (e) {
+    return 'retro';
+  }
+}
+
 function drawBlock(context, x, y, colorIndex, size, alpha) {
   if (!colorIndex) return;
-  const color = COLORS[colorIndex];
+  const skin = activeSkin();
+  context.save();
   context.globalAlpha = alpha ?? 1;
-  context.fillStyle = color;
-  context.fillRect(x * size + 1, y * size + 1, size - 2, size - 2);
-  // highlight
-  context.fillStyle = themeColors.shine;
-  context.fillRect(x * size + 1, y * size + 1, size - 2, 4);
-  context.globalAlpha = 1;
+  skin.drawBlock(context, x * size, y * size, size, skin.colors[colorIndex]);
+  context.restore();
 }
 
 // Círculo en el centro de la tuerca (origen de la pieza en x, y; el hueco es la celda central)
 function drawNutHole(context, x, y, size, alpha) {
   context.globalAlpha = alpha ?? 1;
-  context.strokeStyle = COLORS[NUT];
+  context.strokeStyle = activeSkin().colors[NUT];
   context.lineWidth = 2;
   context.beginPath();
   context.arc((x + 1.5) * size, (y + 1.5) * size, size * 0.3, 0, Math.PI * 2);
@@ -246,7 +341,7 @@ function drawNutHole(context, x, y, size, alpha) {
 }
 
 function drawGrid() {
-  ctx.strokeStyle = themeColors.grid;
+  ctx.strokeStyle = activeSkin().grid || themeColors.grid;
   ctx.lineWidth = 0.5;
   for (let c = 1; c < COLS; c++) {
     ctx.beginPath();
@@ -264,6 +359,8 @@ function drawGrid() {
 
 function draw() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
+  const skinBg = activeSkin().bg;
+  if (skinBg) { ctx.fillStyle = skinBg; ctx.fillRect(0, 0, canvas.width, canvas.height); }
   drawGrid();
 
   // board
@@ -289,6 +386,8 @@ function draw() {
 function drawNext() {
   const NB = 30;
   nextCtx.clearRect(0, 0, nextCanvas.width, nextCanvas.height);
+  const skinBg = activeSkin().bg;
+  if (skinBg) { nextCtx.fillStyle = skinBg; nextCtx.fillRect(0, 0, nextCanvas.width, nextCanvas.height); }
   const shape = next.shape;
   const offX = Math.floor((4 - shape[0].length) / 2);
   const offY = Math.floor((4 - shape.length) / 2);
@@ -570,6 +669,13 @@ document.querySelectorAll('.reset-records-btn').forEach(btn => {
   });
 });
 
+skinSelect.addEventListener('change', () => {
+  applySkin(skinSelect.value);
+  try { localStorage.setItem(SKIN_KEY, skinName); } catch (e) { /* almacenamiento no disponible */ }
+  skinSelect.blur(); // evita que las flechas/Espacio cambien el select durante el juego
+});
+
+applySkin(loadSkin());
 applyTheme(loadTheme());
 renderRecords(startRecords, null);
 document.getElementById('start-btn').focus();
