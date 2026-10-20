@@ -21,3 +21,7 @@ Everything lives in three files: `index.html` (canvases `#board` 300x600 and `#n
 - Piece lifecycle: `lockPiece()` → `merge()` → `clearLines()` → `spawn()`; `spawn()` ends the game if the new piece collides immediately.
 - Input is a single `keydown` handler (arrows, X rotate, Space hard drop, P pause). Soft/hard drop add score directly (1 / 2 per row); line-clear scoring uses `LINE_SCORES * level`.
 - The HUD is updated imperatively via `updateHUD()`; the keydown handler calls it after every key.
+
+## Menú de pausa
+
+`P`/`Escape` llama a `togglePause()`, que abre `#pause-menu` (separado de `#overlay`, que solo se usa en game over). Con `paused` activo el handler de `keydown` bloquea las teclas del juego (`preventDefault`); `closePauseMenu()` hace blur de los controles y fija `inputBlockedUntil` (~150 ms de gracia). `startLevel` (localStorage `tetris-start-level`, 1–10) lo aplica `init()`; `clearLines` usa `Math.max(startLevel, ...)`.

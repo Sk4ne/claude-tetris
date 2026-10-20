@@ -226,3 +226,15 @@ kbd {
 #restart-btn:hover {
   background: var(--accent-hover);
 }
+
+/* Menú de pausa */
+.pause-box { display: flex; flex-direction: column; gap: 10px; min-width: 240px; }
+#pause-title { font-size: 1.6rem; letter-spacing: 3px; margin: 0 0 6px; color: var(--accent); font-weight: 800; }
+.pause-box button { width: 100%; background: var(--accent); color: var(--on-accent); border: none; border-radius: 6px; padding: 10px 28px; font: inherit; font-size: 14px; font-weight: 700; cursor: pointer; letter-spacing: 1px; }
+.pause-box button:hover, .pause-box button:focus-visible { background: var(--accent-hover); outline: 2px solid var(--text); outline-offset: 2px; }
+.pause-controls { list-style: none; margin: 0; padding: 8px 10px; text-align: left; font-size: 0.85rem; border: 1px solid var(--grid); border-radius: 6px; }
+.pause-controls.hidden { display: none; }
+.pause-controls li { margin: 4px 0; }
+.pause-level { display: flex; justify-content: space-between; align-items: center; gap: 10px; font-size: 0.9rem; }
+.pause-level select { font: inherit; padding: 4px 8px; border-radius: 4px; color: inherit; background: var(--overlay-bg); border: 1px solid var(--grid); }
+.pause-hint { margin: 0; font-size: 0.7rem; opacity: 0.7; }
